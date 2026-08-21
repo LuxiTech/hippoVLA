@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hippoVLA — Spatial-Temporal Grounded Vision-Language-Action</title>
+  <meta name="description" content="hippoVLA: a spatial-temporal grounded Vision-Language-Action model with hippocampus-inspired memory." />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --soft: #f8fafc;
+      --text: #111827;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #111827;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --maxw: 1080px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.7;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .container { width: min(var(--maxw), 92%); margin: 0 auto; }
+
+    .hero {
+      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+      padding: 84px 0 44px;
+      text-align: center;
+      border-bottom: 1px solid var(--line);
+    }
+    .venue { color: var(--muted); font-size: 0.98rem; margin-bottom: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .brand {
+      display: inline-block; font-weight: 800;
+      font-size: 1.05rem; letter-spacing: 0.18em;
+      color: var(--primary-dark); margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0 auto 16px; max-width: 920px;
+      font-size: 3rem; line-height: 1.15;
+      font-weight: 700; letter-spacing: -0.02em;
+    }
+    .subtitle {
+      max-width: 820px; margin: 0 auto 18px;
+      font-size: 1.1rem; color: #374151;
+    }
+    .button-row {
+      display: flex; justify-content: center;
+      flex-wrap: wrap; gap: 10px; margin-top: 22px;
+    }
+    .button {
+      border: 1px solid var(--line); border-radius: 999px;
+      padding: 10px 16px; font-size: 0.95rem; background: #fff;
+    }
+    .button:hover { background: var(--soft); }
+    .button.primary {
+      background: var(--primary); color: #fff; border-color: var(--primary);
+    }
+    .button.primary:hover { background: var(--primary-dark); }
+
+    section { padding: 48px 0; }
+    h2 {
+      margin: 0 0 18px; text-align: center;
+      font-size: 1.8rem; font-weight: 700;
+    }
+    h3 { font-size: 1.08rem; }
+
+    .lead { max-width: 820px; margin: 0 auto; text-align: center; color: #374151; }
+
+    .highlights { max-width: 880px; margin: 0 auto; }
+    .highlights ol { padding-left: 22px; margin: 0; }
+
+    .grid-2 {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 22px; align-items: start;
+    }
+    .grid-3 {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 18px; align-items: stretch; margin-top: 22px;
+    }
+    .card {
+      border: 1px solid var(--line); border-radius: 16px;
+      padding: 22px; background: #fff;
+    }
+    .stat-card { text-align: center; }
+    .stat-num {
+      font-size: 2.1rem; font-weight: 800;
+      color: var(--primary-dark); margin: 4px 0;
+    }
+    .stat-label { color: var(--muted); font-size: 0.95rem; }
+
+    .table-wrap { overflow-x: auto; margin-top: 16px; }
+    .results-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.94rem; min-width: 720px;
+    }
+    .results-table th, .results-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px; text-align: center;
+      vertical-align: middle;
+    }
+    .results-table th { background: var(--soft); font-weight: 700; }
+    .results-table td.l, .results-table th.l { text-align: left; }
+    .results-table tr.highlight td {
+      background: #eff6ff; font-weight: 600;
+    }
+    .results-table .best { color: var(--primary-dark); font-weight: 700; }
+    .table-caption {
+      font-size: 0.92rem; color: var(--muted);
+      margin: 8px 4px 0; text-align: left;
+    }
+
+    .video-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 18px; margin-top: 20px;
+    }
+    .video-card {
+      border: 1px solid var(--line); border-radius: 14px;
+      overflow: hidden; background: #fff;
+    }
+    .video-card video { width: 100%; display: block; background: #000; }
+    .video-card .label {
+      padding: 10px 14px; font-size: 0.95rem; color: #374151;
+      border-top: 1px solid var(--line); background: var(--soft);
+    }
+
+    pre {
+      background: #0f172a; color: #e5e7eb;
+      padding: 18px; border-radius: 14px;
+      overflow-x: auto; font-size: 0.92rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 28px 0 42px; text-align: center;
+      color: var(--muted); font-size: 0.95rem;
+    }
+
+    @media (max-width: 800px) {
+      h1 { font-size: 2.1rem; }
+      .grid-2, .grid-3, .video-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <div class="venue">Project Page · Research Preview</div>
+      <div class="brand">hippoVLA</div>
+      <h1>Spatial-Temporal Grounded Vision-Language-Action with Hippocampus-Inspired Memory</h1>
+      <p class="subtitle">
+        hippoVLA combines a spatially enhanced VLM backbone with an explicit
+        short-term memory module — inspired by the hippocampus — to give VLA
+        agents the temporal context they need for long-horizon manipulation.
+      </p>
+      <div class="button-row">
+        <a class="button primary" href="https://github.com/wusimo/hybridVLA/tree/starVLA-jiangnan" target="_blank">Code</a>
+        <a class="button" href="#tldr">TL;DR</a>
+        <a class="button" href="#highlights">Highlights</a>
+        <a class="button" href="#method">Method</a>
+        <a class="button" href="#results">Results</a>
+        <a class="button" href="#videos">Videos</a>
+        <a class="button" href="#citation">Citation</a>
+      </div>
+    </div>
+  </header>
+
+  <section id="tldr">
+    <div class="container">
+      <h2>TL;DR</h2>
+      <p class="lead">
+        Current VLA systems suffer from three bottlenecks: missing 3D geometric priors,
+        missing temporal memory, and weak grounding from semantic reasoning to physical action.
+        <strong>hippoVLA</strong> addresses these with a three-layer design:
+        a hippocampus-inspired spatiotemporal memory, a spatially enhanced
+        RynnBrain-8B backbone, and 3D-grounded training data.
+      </p>
+
+      <div class="grid-3">
+        <div class="card stat-card">
+          <div class="stat-label">LIBERO-10 (Long)</div>
+          <div class="stat-num">96.0</div>
+          <div class="stat-label">+3.0 over no-memory baseline</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">CALVIN ABC→D Avg. Len.</div>
+          <div class="stat-num">4.38</div>
+          <div class="stat-label">rank 3, +0.68 over no-memory</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">LIBERO-Object</div>
+          <div class="stat-num">99.8</div>
+          <div class="stat-label">best across all 4-in-1 settings</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="highlights">
+    <div class="container">
+      <h2>Highlights</h2>
+      <div class="highlights">
+        <ol>
+          <li><strong>Hippocampus-inspired memory.</strong> A short-term memory module aggregates history frames at a tunable sampling interval; on LIBERO it lifts <em>Long</em> from 93.0 → <strong>96.0</strong> and <em>Spatial</em> from 93.2 → <strong>94.4</strong>.</li>
+          <li><strong>Spatially enhanced backbone.</strong> RynnBrain-8B improves spatial reasoning and object localization, reaching CALVIN ABC→D Avg. Len. <strong>4.38</strong> (rank 3) when paired with hippoVLA memory.</li>
+          <li><strong>3D grounded training.</strong> Point/depth-aligned supervision bridges semantic reasoning and physical coordinates.</li>
+          <li><strong>Modular evaluation.</strong> Built on StarVLA, hippoVLA enables clean ablations across backbones, memory configurations, and data settings.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="method">
+    <div class="container">
+      <h2>Method</h2>
+      <p class="lead">
+        hippoVLA is organized as three composable layers that can be ablated independently.
+      </p>
+      <div class="grid-2" style="margin-top: 24px;">
+        <div class="card">
+          <h3>Layer 1 · Hippocampus Memory</h3>
+          <p>
+            Inject explicit short-term memory into the visual encoder so the model retains
+            object trajectories, tracks interaction history, and reasons over long-horizon tasks.
+            The two key knobs are <em>memory length</em> (how many past frames) and
+            <em>sampling interval</em> (how far apart they are sampled). hippoVLA uses
+            length 5 with interval 10 by default.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Layer 2 · Spatially Enhanced VLM</h3>
+          <p>
+            Replace the generic VLM base with RynnBrain-8B, a spatial foundation model that
+            improves geometric understanding and coordinate-sensitive reasoning — directly
+            addressing the 3D-prior bottleneck.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Layer 3 · 3D Grounded Training Data</h3>
+          <p>
+            Integrate depth and point-based supervision into training so the model learns to align
+            language semantics with physically meaningful coordinates rather than 2D pixels.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Engineering Platform</h3>
+          <p>
+            Implemented on StarVLA for clean backbone replacement, modular integration, and
+            controlled ablation across embodied benchmarks (LIBERO 4-in-1, CALVIN ABC→D).
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="results">
+    <div class="container">
+      <h2>Results</h2>
+
+      <h3 style="margin-top: 24px;">LIBERO 4-in-1 — Memory ablation</h3>
+      <div class="table-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="l">Setting</th>
+              <th>Batch</th>
+              <th>Steps</th>
+              <th>Base Model</th>
+              <th>Added Module</th>
+              <th>Object</th>
+              <th>Spatial</th>
+              <th>Goal</th>
+              <th>Long</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="l">Official</td>
+              <td>—</td>
+              <td>50k</td>
+              <td>starVLA-Qwen3VL-4B</td>
+              <td>None</td>
+              <td>99.6</td>
+              <td>—</td>
+              <td>99.0</td>
+              <td>98.6</td>
+            </tr>
+            <tr>
+              <td class="l">Reproduced</td>
+              <td>—</td>
+              <td>50k</td>
+              <td>starVLA-Qwen3VL-4B</td>
+              <td>None</td>
+              <td>99.6</td>
+              <td>93.2</td>
+              <td>98.6</td>
+              <td>93.0</td>
+            </tr>
+            <tr>
+              <td class="l">+ hippoVLA memory (interval 5)</td>
+              <td>16</td>
+              <td>20k</td>
+              <td>starVLA-Qwen3VL-4B</td>
+              <td>Memory len 5</td>
+              <td>99.6</td>
+              <td>94.2</td>
+              <td>98.2</td>
+              <td>95.8</td>
+            </tr>
+            <tr class="highlight">
+              <td class="l">+ hippoVLA memory (interval 10) <strong>[ours]</strong></td>
+              <td>16</td>
+              <td>20k</td>
+              <td>starVLA-Qwen3VL-4B</td>
+              <td>Memory len 5</td>
+              <td class="best">99.8</td>
+              <td class="best">94.4</td>
+              <td>96.4</td>
+              <td class="best">96.0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-caption">
+        Success rate (%) on the four LIBERO suites under a single 4-in-1 co-training run.
+        hippoVLA memory with sampling interval 10 yields the best overall performance,
+        improving Long-horizon by +3.0 and Spatial by +1.2 over the no-memory baseline.
+      </p>
+
+      <h3 style="margin-top: 36px;">LIBERO — Cross-backbone comparison</h3>
+      <div class="table-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="l">Method</th>
+              <th>Note</th>
+              <th>LIBERO-Spatial</th>
+              <th>LIBERO-Object</th>
+              <th>LIBERO-Goal</th>
+              <th>LIBERO-10</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="l">Qwen2.5-VL-GR00T-LIBERO-4in1</td>
+              <td>local reproduction</td>
+              <td>98.4</td>
+              <td>99.0</td>
+              <td>96.2</td>
+              <td>91.0</td>
+            </tr>
+            <tr>
+              <td class="l">RynnBrain-8B-OFT (no memory)</td>
+              <td>step 60k</td>
+              <td>94.4</td>
+              <td>100.0</td>
+              <td>98.0</td>
+              <td>95.8</td>
+            </tr>
+            <tr class="highlight">
+              <td class="l"><strong>hippoVLA (RynnBrain-8B + memory)</strong></td>
+              <td>step 60k</td>
+              <td class="best">95.4</td>
+              <td>99.6</td>
+              <td>97.2</td>
+              <td>93.8</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-caption">
+        Adding hippoVLA memory on top of the RynnBrain-8B-OFT backbone improves Spatial (+1.0)
+        while maintaining strong Object / Goal / Long performance.
+      </p>
+
+      <h3 style="margin-top: 36px;">CALVIN ABC→D Long-horizon Leaderboard</h3>
+      <div class="table-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th class="l">Method</th>
+              <th class="l">Input</th>
+              <th>Step 1</th>
+              <th>Step 2</th>
+              <th>Step 3</th>
+              <th>Step 4</th>
+              <th>Step 5</th>
+              <th>Avg. Len.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td class="l">FLOWER</td><td class="l">Static + Gripper RGB</td><td>99.4%</td><td>95.8%</td><td>90.7%</td><td>84.9%</td><td>77.8%</td><td>4.53</td></tr>
+            <tr><td>2</td><td class="l">UniVLA</td><td class="l">Static + Gripper RGB</td><td>98.9%</td><td>94.8%</td><td>89.0%</td><td>82.8%</td><td>75.1%</td><td>4.41</td></tr>
+            <tr class="highlight"><td>3</td><td class="l"><strong>hippoVLA (RynnBrain + memory) [ours]</strong></td><td class="l">—</td><td>99.1%</td><td>94.4%</td><td>88.4%</td><td>81.6%</td><td>74.1%</td><td class="best">4.38</td></tr>
+            <tr><td>4</td><td class="l">SeeR-Large</td><td class="l">Static + Gripper RGB + Proprio</td><td>96.3%</td><td>91.6%</td><td>86.1%</td><td>80.3%</td><td>74.0%</td><td>4.28</td></tr>
+            <tr><td>5</td><td class="l">GR-MG</td><td class="l">Static + Gripper RGB + Proprio</td><td>96.8%</td><td>89.3%</td><td>81.5%</td><td>72.7%</td><td>64.4%</td><td>4.04</td></tr>
+            <tr><td>6</td><td class="l">MoDE</td><td class="l">Static + Gripper RGB</td><td>96.2%</td><td>88.9%</td><td>81.1%</td><td>71.8%</td><td>63.5%</td><td>4.01</td></tr>
+            <tr><td>7</td><td class="l">RynnBrain (no memory)</td><td class="l">—</td><td>88.7%</td><td>79.9%</td><td>72.7%</td><td>67.3%</td><td>61.0%</td><td>3.70</td></tr>
+            <tr><td>8</td><td class="l">GHIL-Glue</td><td class="l">Static RGB</td><td>95.2%</td><td>88.5%</td><td>73.2%</td><td>62.5%</td><td>49.8%</td><td>3.69</td></tr>
+            <tr><td>9</td><td class="l">RoboUniView</td><td class="l">Static + Gripper RGB-D + Cam</td><td>94.2%</td><td>84.2%</td><td>73.4%</td><td>62.2%</td><td>50.7%</td><td>3.64</td></tr>
+            <tr><td>10</td><td class="l">Diffusion Transformer Policy</td><td class="l">Static RGB</td><td>94.5%</td><td>82.5%</td><td>72.8%</td><td>61.3%</td><td>50.0%</td><td>3.61</td></tr>
+            <tr><td>11</td><td class="l">CLOVER</td><td class="l">Static RGB-D</td><td>96.0%</td><td>83.5%</td><td>70.8%</td><td>57.5%</td><td>45.4%</td><td>3.53</td></tr>
+            <tr><td>12</td><td class="l">3D Diffuser Actor</td><td class="l">RGB-D + Proprio + Cam</td><td>92.2%</td><td>78.7%</td><td>63.9%</td><td>51.2%</td><td>41.2%</td><td>3.27</td></tr>
+            <tr><td>13</td><td class="l">GR-1</td><td class="l">Static + Gripper RGB + Proprio</td><td>85.4%</td><td>71.2%</td><td>59.6%</td><td>49.7%</td><td>40.1%</td><td>3.06</td></tr>
+            <tr><td>14</td><td class="l">DeeR</td><td class="l">Static + Gripper RGB</td><td>86.2%</td><td>70.1%</td><td>51.8%</td><td>41.5%</td><td>30.4%</td><td>2.82</td></tr>
+            <tr><td>15</td><td class="l">SuSIE</td><td class="l">Static RGB</td><td>87.0%</td><td>69.0%</td><td>49.0%</td><td>38.0%</td><td>26.0%</td><td>2.69</td></tr>
+            <tr><td>16</td><td class="l">RoboFlamingo</td><td class="l">Static + Gripper RGB</td><td>82.4%</td><td>61.9%</td><td>46.6%</td><td>33.1%</td><td>23.5%</td><td>2.47</td></tr>
+            <tr><td>17</td><td class="l">SPIL</td><td class="l">Static + Gripper RGB</td><td>74.2%</td><td>46.3%</td><td>27.6%</td><td>14.7%</td><td>8.0%</td><td>1.71</td></tr>
+            <tr><td>18</td><td class="l">HULC</td><td class="l">Static + Gripper RGB</td><td>41.8%</td><td>16.5%</td><td>5.7%</td><td>1.9%</td><td>1.1%</td><td>0.67</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-caption">
+        On the CALVIN ABC→D leaderboard, hippoVLA reaches rank 3 (Avg. Len. 4.38),
+        a +0.68 improvement over the no-memory ablation (3.70) — directly attributable to
+        the hippocampus-inspired temporal memory module.
+      </p>
+    </div>
+  </section>
+
+  <section id="videos">
+    <div class="container">
+      <h2>Rollout Videos</h2>
+      <p class="lead">
+        Qualitative rollouts from the hippoVLA checkpoint
+        (<code>0420_libero4in1_RynnBrain8OFT_memory</code>, step 60k) on the four LIBERO suites.
+      </p>
+      <div class="video-grid">
+        <div class="video-card">
+          <video src="./assets/spatial_demo.mp4" controls muted loop playsinline></video>
+          <div class="label">LIBERO-Spatial · pick the bowl between the plate and ramekin and place it on the plate</div>
+        </div>
+        <div class="video-card">
+          <video src="./assets/object_demo.mp4" controls muted loop playsinline></video>
+          <div class="label">LIBERO-Object · pick up the alphabet soup and place it in the basket</div>
+        </div>
+        <div class="video-card">
+          <video src="./assets/goal_demo.mp4" controls muted loop playsinline></video>
+          <div class="label">LIBERO-Goal · open the middle drawer of the cabinet</div>
+        </div>
+        <div class="video-card">
+          <video src="./assets/long_demo.mp4" controls muted loop playsinline></video>
+          <div class="label">LIBERO-10 (Long) · pick up the book and place it in the back compartment of the caddy</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <h2>Roadmap</h2>
+      <div class="highlights">
+        <ol>
+          <li><strong>Stage I — Qwen3-VL + hippoVLA memory:</strong> establish the memory module and validate on LIBERO 4-in-1.</li>
+          <li><strong>Stage II — RynnBrain-8B + hippoVLA memory:</strong> swap to a spatially stronger backbone; current best on CALVIN ABC→D.</li>
+          <li><strong>Stage III — 3D grounded training:</strong> add depth / point supervision to close the semantic-to-physical gap.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="citation">
+    <div class="container">
+      <h2>Citation</h2>
+      <pre><code>@misc{hippovla_2026,
+  title  = {hippoVLA: Spatial-Temporal Grounded Vision-Language-Action with Hippocampus-Inspired Memory},
+  author = {},
+  year   = {2026},
+  note   = {Project Page}
+}</code></pre>
+    </div>
+  </section>
+
+  <footer>
+    hippoVLA · Project page built for GitHub Pages
+  </footer>
+</body>
+</html>

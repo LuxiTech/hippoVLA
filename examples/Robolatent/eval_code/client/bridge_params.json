@@ -1,0 +1,15 @@
+{
+    "publish_rate": 40,
+    "arm_steps_length": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
+    "use_depth_image": false,
+    "img_left_topic": null,
+    "img_right_topic": "/camera_r/color/image_raw",
+    "img_front_topic": null,
+    "use_robot_base": false,
+    "puppet_arm_left_topic": "/puppet/joint_left",
+    "puppet_arm_right_topic": "/puppet/joint_right",
+    "puppet_arm_left_cmd_topic": "/master/joint_left",
+    "puppet_arm_right_cmd_topic": "/master/joint_right",
+    "puppet_arm_pos_left_topic": "/puppet/end_left",
+    "puppet_arm_pos_right_topic": "/puppet/end_right"
+}

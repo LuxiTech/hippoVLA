@@ -1,0 +1,112 @@
+run_id: robolatent_pickxtimes_left_RynnBrainOFT
+run_root_dir: results/Checkpoints
+seed: 42
+trackers: [jsonl, wandb]
+wandb_entity: zkril-cug
+wandb_project: starVLA_Robolatent
+is_debug: false
+
+framework:
+  name: RynnBrainOFT
+
+  qwenvl:
+    base_vlm: playground/Pretrained_models/RynnBrain-CoP-8B
+    attn_implementation: flash_attention_2
+    vl_hidden_dim: 4096
+
+    # 如果你想沿用 LIBERO memory 版本，保留 True。
+    # 如果显存不够，先改成 false。
+    memory: true
+    max_memory_step: 5
+
+  dino:
+    dino_backbone: dinov2_vits14
+
+  action_model:
+    action_model_type: L1RegressionActionHead
+    action_hidden_dim: 4096
+
+    # Robolatent 单臂：6 joints + 1 gripper
+    action_dim: 7
+    state_dim: 7
+
+    # 这里跟 LIBERO/RynnBrainOFT 风格对齐：一次预测 8 个 action
+    future_action_window_size: 7
+    past_action_window_size: 0
+    num_actions_chunk: 8
+
+    use_pro_version: true
+
+  reduce_in_full_precision: true
+
+datasets:
+  # 第一版建议先不做 VLM co-training，只训练 VLA。
+  # 所以这里可以先不写 vlm_data，或者写了但把 trainer.loss_scale.vlm 设成 0.0。
+
+  vla_data:
+    dataset_py: lerobot_datasets
+    data_root_dir: /mnt/data/jiangnan/Robolatent_lerobot
+    data_mix: robolatent_pickxtimes_left
+
+    # 你当前 HDF5 是 qpos/action 单臂 7D，不是 LIBERO 的 delta_qpos。
+    # 如果 action[:, 0:7] 是目标关节位置，建议先写 joint。
+    action_type: joint
+
+    CoT_prompt: "Your task is {instruction}."
+
+    # 你转换后的 LeRobot 数据是 4 路相机：
+    # cam_head / cam_high / cam_left_wrist / cam_right_wrist
+    # 这里是否生效取决于你当前 lerobot_datasets.py 是否读取 obs 字段。
+    # 如果你的 DataConfig 已经写了 video_keys，这里可以不写 obs。
+    obs: ["cam_head", "cam_high", "cam_left_wrist", "cam_right_wrist"]
+
+    default_image_resolution: [3, 224, 224]
+    per_device_batch_size: 4
+    num_workers: 4
+    load_all_data_for_training: true
+    video_backend: decord
+
+    memory: true
+    max_step: 5
+    interval: 10
+
+trainer:
+  epochs: 100
+  max_train_steps: 20000
+  num_warmup_steps: 1000
+  save_interval: 2000
+  eval_interval: 500
+
+  learning_rate:
+    base: 2.5e-05
+    qwen_vl_interface: 1.0e-05
+    action_model: 1.0e-04
+
+  lr_scheduler_type: cosine_with_min_lr
+  scheduler_specific_kwargs:
+    min_lr: 1.0e-06
+
+  freeze_modules: ''
+
+  loss_scale:
+    vla: 1.0
+    vlm: 0.0
+
+  max_grad_norm: 1.0
+  warmup_ratio: 0.1
+  weight_decay: 0.0
+  logging_frequency: 20
+  gradient_clipping: 1.0
+  gradient_accumulation_steps: 1
+
+  optimizer:
+    name: AdamW
+    betas: [0.9, 0.95]
+    eps: 1.0e-08
+    weight_decay: 1.0e-08
+
+  is_resume: false
+  resume_epoch: null
+  resume_step: null
+  enable_gradient_checkpointing: true
+  enable_mixed_precision_training: true

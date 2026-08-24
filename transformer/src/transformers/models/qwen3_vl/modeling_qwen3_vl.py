@@ -44,8 +44,6 @@ from ...utils.generic import check_model_inputs
 from .configuration_qwen3_vl import Qwen3VLConfig, Qwen3VLTextConfig, Qwen3VLVisionConfig
 from ...modeling_memory import ShortTermMemoryBank
 
-STARVLA_ROBOSYN_MEMORY_IMPLEMENTATION = "direct_mean_pool_v1"
-
 class Qwen3VLVisionMLP(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -903,8 +901,8 @@ class Qwen3VLModel(Qwen3VLPreTrainedModel):
         self.rope_deltas = None  # cache rope_deltas here
         self.memory_mode = memory_mode
         if self.memory_mode:
-            pass
-            # self.memory = ShortTermMemoryBank(dim=config.vision_config.out_hidden_size, num_timesteps=max_memory_step)
+            self.memory = ShortTermMemoryBank(dim=config.vision_config.out_hidden_size,
+                                              num_timesteps=max_memory_step)
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -1257,6 +1255,7 @@ class Qwen3VLModel(Qwen3VLPreTrainedModel):
             visual_memorys = kwargs['memorys'] # [batchsize*memory_length*view*num_image_token*4,1536],num_image_token是patch_merged后的数量
             memorys_length = kwargs['memorys_length']
             views = kwargs['views']
+            steps = torch.tensor(kwargs['steps'], device=visual_memorys.device)
             image_grid_thw_expanded = image_grid_thw.unsqueeze(1).expand(-1, memorys_length, -1).reshape(-1, 3)
             memory_embeds, deepstack_memory_embeds = self.get_memory_features(visual_memorys, image_grid_thw_expanded)
             # deepstack_memory_embeds维度：[batchsize*memory_length*view*num_image_token,2560]
@@ -1269,11 +1268,6 @@ class Qwen3VLModel(Qwen3VLPreTrainedModel):
             # 推断N：total = B * 5 * views * N_mem 或 B * views * N_vis
             N_mem = total_mem_tokens // (batch_size * memorys_length * views)
             N_vis = total_vis_tokens // (batch_size * views)
-            if N_mem != N_vis:
-                raise ValueError(
-                    "Memory and current visual token counts must match for direct feature fusion: "
-                    f"N_mem={N_mem}, N_vis={N_vis}"
-                )
             
             # ========== 3. 直接构造tensor，避免多次stack ==========
             # 预分配目标tensor，减少内存碎片
@@ -1292,15 +1286,9 @@ class Qwen3VLModel(Qwen3VLPreTrainedModel):
             # 立即释放原始特征
             del deepstack_memory_embeds, deepstack_visual_embeds, visual_memorys
             
-            # ========== 4. 消融：不调用memory模块，直接融合memory和当前visual ==========
-            # memory_tensor: [B, 3, memorys_length, views, N, D]
-            # visual_tensor: [B, 3, views, N, D]
-            # 为了保持后续visual_pos_masks对应的token数量不变，将memory和当前visual
-            # 在时间维合并后做mean pooling，得到[B, 3, views, N, D]。
-            visual_tensor = torch.cat(
-                [memory_tensor, visual_tensor.unsqueeze(2)],
-                dim=2,
-            ).mean(dim=2)
+            # ========== 4. 记忆更新 ==========
+            visual_tensor = self.memory(memory_tensor, visual_tensor, steps)
+            # [B, 3, 2, N_vis, D]
             
             del memory_tensor  # 释放大历史tensor
             

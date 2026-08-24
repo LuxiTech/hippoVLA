@@ -98,6 +98,7 @@ class RynnBrain_OFT(baseframework):
         if self.memory_mode:
             memorys = [ex["memory"] for ex in examples]
             steps = [ex["step"] for ex in examples]
+            views = len(batch_images[0])    # 确定视角数量
 
         # step 0: append action placeholders
         action_tokens = self.action_token * self.chunk_len
@@ -111,7 +112,7 @@ class RynnBrain_OFT(baseframework):
             )
         else:
             rb_inputs = self.vlm_interface.build_rynnbrain_inputs_with_memorys(
-                images=batch_images, instructions=instructions, memorys=memorys, steps=steps
+                images=batch_images, instructions=instructions, memorys=memorys, steps=steps, views=views
             )
 
         # step 2: run backbone
@@ -163,6 +164,7 @@ class RynnBrain_OFT(baseframework):
             # does not see a non-writable array.
             memorys = [to_pil_preserve(ex["memory"]) for ex in examples]
             steps = [ex["step"] for ex in examples]
+            views = len(batch_images[0])    # 确定视角数量
 
             # ---- [MEMORY PROBE] prints first N eval calls then a periodic sample ----
             if not hasattr(self, "_mem_probe_count"):
@@ -208,7 +210,7 @@ class RynnBrain_OFT(baseframework):
             )
         else:
             rb_inputs = self.vlm_interface.build_rynnbrain_inputs_with_memorys(
-                images=batch_images, instructions=instructions, memorys=memorys, steps=steps
+                images=batch_images, instructions=instructions, memorys=memorys, steps=steps, views=views
             )
 
             # ---- [MEMORY PROBE] post-processor shapes actually entering the model ----

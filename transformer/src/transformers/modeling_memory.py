@@ -72,12 +72,14 @@ class ShortTermMemoryBank(nn.Module):
         num_heads: int = 8,
         num_levels: int = 3,
         num_timesteps: int = 5,
+        num_views: int = 2,
     ):
         super().__init__()
         self.dim = dim
         self.num_slots = num_slots
         self.num_levels = num_levels
         self.num_timesteps = num_timesteps
+        self.num_views = num_views
         
         self.write_attns = nn.ModuleList([
             MemorySlotAttention(dim, num_heads) for _ in range(num_levels)
@@ -123,18 +125,19 @@ class ShortTermMemoryBank(nn.Module):
     
     def forward(
         self,
-        memory: torch.Tensor,           # [B, 3, T, 2, 64, D]
-        visual: torch.Tensor,           # [B, 3, 2, 64, D]
+        memory: torch.Tensor,           # [B, 3, T, V, 64, D]
+        visual: torch.Tensor,           # [B, 3, V, 64, D]
         timestep: torch.Tensor,         # [B] 或 int，每个样本的时间步
     ) -> torch.Tensor:
         """
         更新记忆，3个层级分别处理，支持 batch 中不同 timestep。
         """
-        assert memory.dim() == 6, f"memory must be [B,3,T,V,S,D], got {memory.shape}"
-        assert visual.dim() == 5, f"visual must be [B,3,V,S,D], got {visual.shape}"
+        assert memory.dim() == 6, f"memory must be [B,3,T,V,64,D], got {memory.shape}"
+        assert visual.dim() == 5, f"visual must be [B,3,V,64,D], got {visual.shape}"
         B, L, T, V, S, D = memory.shape
         assert L == self.num_levels
         assert T == self.num_timesteps
+        # assert V == self.num_views
         assert S == self.num_slots
         assert visual.shape == (B, L, V, S, D)
         
@@ -152,29 +155,29 @@ class ShortTermMemoryBank(nn.Module):
         # 处理每个层级
         new_memories = []
         for level in range(self.num_levels):
-            level_memory = memory[:, level, :, :, :, :]   # [B, T, 2, 64, D]
-            level_visual = visual[:, level, :, :, :]       # [B, 2, 64, D]
+            level_memory = memory[:, level, :, :, :, :]   # [B, T, V, 64, D]
+            level_visual = visual[:, level, :, :, :]       # [B, V, 64, D]
             
             # 添加时间编码: [B, D] -> [B, 1, 1, D]
-            level_visual_t = level_visual + t_emb.view(B, 1, 1, D)  # [B, 2, 64, D]
+            level_visual_t = level_visual + t_emb.view(B, 1, 1, D)  # [B, V, 64, D]
             
-            # 聚合历史: [B, 5, 2, 64, D] -> [B, 2, 5*64, D]
+            # 聚合历史: [B, 5, V, 64, D] -> [B, V, 5*64, D]
             memory_per_view = level_memory.permute(0, 2, 1, 3, 4).reshape(B, V, T * S, D)
             
             # 用最后一帧 attend 历史
-            last_memory = level_memory[:, -1, :, :, :]  # [B, 2, 64, D]
-            history_agg = self.write_attns[level](last_memory, memory_per_view)  # [B, 2, 64, D]
+            last_memory = level_memory[:, -1, :, :, :]  # [B, V, 64, D]
+            history_agg = self.write_attns[level](last_memory, memory_per_view)  # [B, V, 64, D]
             
             # 门控融合
-            gate_input = torch.cat([history_agg, level_visual_t], dim=-1)  # [B, 2, 64, 2D]
-            gate = self.write_gates[level](gate_input)  # [B, 2, 64, D]
+            gate_input = torch.cat([history_agg, level_visual_t], dim=-1)  # [B, V, 64, 2D]
+            gate = self.write_gates[level](gate_input)  # [B, V, 64, D]
             
             level_new_memory = gate * level_visual_t + (1 - gate) * history_agg
             level_new_memory = self.norms[level](level_new_memory)
             
             new_memories.append(level_new_memory)
         
-        # 堆叠: [B, 3, 2, 64, D]
+        # 堆叠: [B, 3, V, 64, D]
         new_memory = torch.stack(new_memories, dim=1)
         
         return new_memory
@@ -187,11 +190,11 @@ def demo():
     num_slots = 64
     T = 10
     device = torch.device('cpu')
-    memory_bank = ShortTermMemoryBank(dim=D, num_slots=num_slots,num_timesteps=T).to(device)
+    memory_bank = ShortTermMemoryBank(dim=D, num_slots=num_slots,num_timesteps=T,num_views=3).to(device)
     
     # 输入
-    memory = torch.randn(B, 3, T, 2, num_slots, D).to(device)
-    visual = torch.randn(B, 3, 2, num_slots, D).to(device)
+    memory = torch.randn(B, 3, T, 3, num_slots, D).to(device)
+    visual = torch.randn(B, 3, 3, num_slots, D).to(device)
     
     # 情况1: 所有样本相同 timestep (int)
     new_memory = memory_bank(memory, visual, timestep=10)
